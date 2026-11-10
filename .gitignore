@@ -10,3 +10,4 @@ venv/
 data/
 *.db
 *.sqlite3
+.streamlit/secrets.toml
