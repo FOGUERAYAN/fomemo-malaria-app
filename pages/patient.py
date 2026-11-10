@@ -1,11 +1,11 @@
 import streamlit as st
 from PIL import Image
-import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from utils.auth import require_role, sidebar_user_box
 from utils.database import list_analyses, save_analysis
+from utils.inference import is_uncertain, preprocess, validate_image
+from utils.model import load_model
 
 # Configuration de la page
 st.set_page_config(page_title="FOMEMO - Patient", layout="centered")
@@ -15,7 +15,7 @@ user = require_role("patient")
 sidebar_user_box()
 
 # Chargement du modèle
-model = tf.keras.models.load_model("models/malaria_model.h5")
+model = load_model()
 input_shape = model.input_shape[1:4]  # (height, width, channels)
 
 # Logo et titre
@@ -39,13 +39,14 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="🖼️ Image chargée", use_container_width=True)
 
-    # L'analyse n'est lancée (et enregistrée) qu'au clic, pas à chaque rerun
-    if st.button("🔬 Analyser l'image", type="primary"):
-        image_resized = image.resize((input_shape[1], input_shape[0]))
-        image_array = np.array(image_resized) / 255.0
-        image_array = np.expand_dims(image_array, axis=0)
+    problems = validate_image(image)
+    for problem in problems:
+        st.error(problem)
 
-        probability = float(model.predict(image_array)[0][0])
+    # L'analyse n'est lancée (et enregistrée) qu'au clic, pas à chaque rerun
+    if not problems and st.button("🔬 Analyser l'image", type="primary"):
+        with st.spinner("Analyse en cours…"):
+            probability = float(model.predict(preprocess(image, input_shape), verbose=0)[0][0])
         label = save_analysis(user["id"], uploaded_file.name, probability)
 
         st.markdown("### 🩺 Résultat de l'analyse :")
@@ -53,6 +54,14 @@ if uploaded_file is not None:
             st.error("🦠 Parasitée (Paludisme détecté)")
         else:
             st.success("✅ Saine (Aucun signe détecté)")
+        st.progress(min(max(probability, 0.0), 1.0), text=f"Probabilité de parasitage : {probability:.1%}")
+        if is_uncertain(probability):
+            st.warning("⚠️ Résultat peu tranché (probabilité proche de 50 %) : refaites l'analyse avec une image plus nette.")
+
+st.info(
+    "⚕️ Cet outil est une aide pédagogique et ne remplace pas un diagnostic médical. "
+    "En cas de doute ou de symptômes (fièvre, frissons…), consultez un professionnel de santé."
+)
 
 # Historique du patient
 st.markdown("### 🗂️ Mon historique")
