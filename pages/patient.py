@@ -4,12 +4,18 @@ import numpy as np
 import tensorflow as tf
 import os
 
-# Chargement du modèle
-model = tf.keras.models.load_model("models/malaria_model.h5")
-input_shape = model.input_shape[1:4]  # (height, width, channels)
+from utils.auth import require_role, sidebar_user_box
 
 # Configuration de la page
 st.set_page_config(page_title="FOMEMO - Patient", layout="centered")
+
+# Garde d'accès : doit précéder tout traitement
+user = require_role("patient")
+sidebar_user_box()
+
+# Chargement du modèle
+model = tf.keras.models.load_model("models/malaria_model.h5")
+input_shape = model.input_shape[1:4]  # (height, width, channels)
 
 # Logo et titre
 col1, col2 = st.columns([1, 5])

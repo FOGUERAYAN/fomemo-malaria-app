@@ -13,6 +13,21 @@ pip install -r requirements.txt
 streamlit run main.py
 ```
 
+## Comptes
+
+- **Patient** : inscription libre depuis la page d'accueil.
+- **Admin** : l'inscription exige un code d'invitation. Définissez-le via un secret Streamlit
+  (`.streamlit/secrets.toml` : `ADMIN_INVITE_CODE = "..."`) ou la variable d'environnement `ADMIN_INVITE_CODE`.
+  Sans code configuré, aucun compte admin ne peut être créé.
+- Les données sont stockées dans une base SQLite locale (`data/fomemo.db`, chemin modifiable via `FOMEMO_DB`),
+  mots de passe hachés (PBKDF2-SHA256 + sel).
+
+## Tests
+
+```bash
+pip install pytest && pytest
+```
+
 ## Structure
 
 | Chemin | Rôle |
