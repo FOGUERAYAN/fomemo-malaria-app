@@ -1,6 +1,6 @@
 import streamlit as st
-from PIL import Image
-import os
+from utils.auth import check_invite_code, login
+from utils.database import create_user
 
 st.set_page_config(page_title="FOMEMO - Accueil", layout="centered")
 
@@ -22,67 +22,40 @@ with st.sidebar:
 st.markdown("### 👤 Choisissez votre rôle")
 
 choix = st.radio("Vous êtes :", ["Patient", "Admin"], horizontal=True)
+role = choix.lower()
+onglet = st.radio("Action :", ["Se connecter", "S'inscrire"], horizontal=True)
 
-# Zone principale pour les formulaires
-if choix == "Patient":
-    onglet = st.radio("Action :", ["S'inscrire", "Se connecter"], horizontal=True)
-
-    if onglet == "S'inscrire":
-        st.markdown("#### 📝 Inscription Patient")
-        with st.form("inscription_patient"):
-            nom = st.text_input("Nom")
-            age = st.number_input("Âge", min_value=0, step=1)
-            poids = st.number_input("Poids (kg)", min_value=0.0)
-            adresse = st.text_input("Adresse")
-            mot_de_passe = st.text_input("Mot de passe", type="password")
-            submit = st.form_submit_button("S'inscrire")
-            if submit:
-                # Ici tu peux ajouter une vraie logique d'enregistrement
-                st.success("Inscription réussie ✅")
-
-    if onglet == "Se connecter":
-        st.markdown("#### 🔓 Connexion Patient")
-        with st.form("connexion_patient"):
-            nom = st.text_input("Nom")
-            mot_de_passe = st.text_input("Mot de passe", type="password")
-            login = st.form_submit_button("Se connecter")
-            if login:
-                if nom and mot_de_passe:
-                    # Simule une authentification réussie
-                    st.session_state["auth_patient"] = True
-                    st.success("Connexion réussie ✅")
-                    st.switch_page("pages/patient.py")
-                else:
-                    st.error("Veuillez remplir tous les champs")
-
-elif choix == "Admin":
-    onglet = st.radio("Action :", ["S'inscrire", "Se connecter"], horizontal=True)
-
-    if onglet == "S'inscrire":
-        st.markdown("#### 📝 Inscription Admin")
-        with st.form("inscription_admin"):
-            nom = st.text_input("Nom")
-            age = st.number_input("Âge", min_value=0, step=1)
-            adresse = st.text_input("Adresse")
-            admin_id = st.text_input("ID Admin")
-            mot_de_passe = st.text_input("Mot de passe", type="password")
-            submit = st.form_submit_button("S'inscrire")
-            if submit:
-                st.success("Inscription réussie ✅")
-
-    if onglet == "Se connecter":
-        st.markdown("#### 🔓 Connexion Admin")
-        with st.form("connexion_admin"):
-            nom = st.text_input("Nom")
-            mot_de_passe = st.text_input("Mot de passe", type="password")
-            login = st.form_submit_button("Se connecter")
-            if login:
-                if nom and mot_de_passe:
-                    st.session_state["auth_admin"] = True
-                    st.success("Connexion réussie ✅")
-                    st.switch_page("pages/admin.py")
-                else:
-                    st.error("Veuillez remplir tous les champs")
+if onglet == "S'inscrire":
+    st.markdown(f"#### 📝 Inscription {choix}")
+    with st.form(f"inscription_{role}"):
+        nom = st.text_input("Nom")
+        age = st.number_input("Âge", min_value=0, max_value=120, step=1)
+        poids = st.number_input("Poids (kg)", min_value=0.0) if role == "patient" else None
+        adresse = st.text_input("Adresse")
+        if role == "admin":
+            code = st.text_input("Code d'invitation admin", type="password")
+        mot_de_passe = st.text_input("Mot de passe (8 caractères minimum)", type="password")
+        submit = st.form_submit_button("S'inscrire")
+    if submit:
+        if role == "admin" and not check_invite_code(code):
+            st.error("Code d'invitation admin invalide ou non configuré.")
+        else:
+            try:
+                create_user(nom, mot_de_passe, role, age=int(age), weight=poids, address=adresse)
+                st.success("Inscription réussie ✅ Vous pouvez maintenant vous connecter.")
+            except ValueError as e:
+                st.error(str(e))
+else:
+    st.markdown(f"#### 🔓 Connexion {choix}")
+    with st.form(f"connexion_{role}"):
+        nom = st.text_input("Nom")
+        mot_de_passe = st.text_input("Mot de passe", type="password")
+        submit = st.form_submit_button("Se connecter")
+    if submit:
+        if login(nom, mot_de_passe, role):
+            st.switch_page(f"pages/{role}.py")
+        else:
+            st.error("Nom ou mot de passe incorrect.")
 
 # Pied de page
 st.markdown("""

@@ -6,6 +6,11 @@ import os
 # Configuration
 st.set_page_config(page_title="FOMEMO - Admin", layout="wide")
 
+from utils.auth import require_role, sidebar_user_box
+
+require_role("admin")
+sidebar_user_box()
+
 # En-tête avec logo et titre réduit
 col1, col2 = st.columns([1, 5])
 with col1:
