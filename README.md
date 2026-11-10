@@ -25,7 +25,7 @@ streamlit run main.py
 ## Tests
 
 ```bash
-pip install pytest && pytest
+pip install pytest numpy pillow && pytest
 ```
 
 ## Structure
