@@ -7,18 +7,12 @@ st.set_page_config(page_title="FOMEMO - Admin", layout="wide")
 
 from utils.auth import require_role, sidebar_user_box
 from utils.database import list_analyses, list_patient_names
+from utils.ui import footer, header
 
 require_role("admin")
 sidebar_user_box()
 
-# En-tête avec logo et titre réduit
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.image("assets/logo.png", width=80)
-with col2:
-    st.markdown("<h4 style='margin-top: 20px;'>FOMEMO Malaria Diagnosis App - Admin</h4>", unsafe_allow_html=True)
-
-st.markdown("<hr>", unsafe_allow_html=True)
+header("FOMEMO Malaria Diagnosis App - Admin")
 
 # Filtres
 with st.sidebar:
@@ -69,7 +63,4 @@ else:
         mime="text/csv",
     )
 
-# Pied de page
-st.markdown("""
-<br><hr><small style='color: gray;'>Développé avec ❤️ par FOGUE, METAFE, et MOUSSINGA - projet-tutoré 2025</small>
-""", unsafe_allow_html=True)
+footer()
