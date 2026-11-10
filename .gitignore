@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+.pytest_cache/
+
+# Données utilisateurs / base locale (ne jamais commiter)
+data/
+*.db
+*.sqlite3
