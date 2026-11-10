@@ -6,6 +6,7 @@ from utils.auth import require_role, sidebar_user_box
 from utils.database import list_analyses, save_analysis
 from utils.inference import is_uncertain, preprocess, validate_image
 from utils.model import load_model
+from utils.ui import footer, header
 
 # Configuration de la page
 st.set_page_config(page_title="FOMEMO - Patient", layout="centered")
@@ -18,16 +19,7 @@ sidebar_user_box()
 model = load_model()
 input_shape = model.input_shape[1:4]  # (height, width, channels)
 
-# Logo et titre
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.image("assets/logo.png", width=80)
-with col2:
-    st.markdown("""
-    <h3 style='margin-top: 18px;'>FOMEMO Malaria Diagnosis App</h3>
-    """, unsafe_allow_html=True)
-
-st.markdown("<hr>", unsafe_allow_html=True)
+header()
 
 # Espace principal avec formulaire centré
 st.title("🔬 Espace Patient - Analyse du paludisme")
@@ -84,4 +76,4 @@ with st.sidebar:
     Pour des résultats fiables, utilisez une image bien éclairée.
     """)
 
-st.markdown("<br><hr><small style='color: gray;'>Développé avec ❤️ par FOGUE, METAFE, et MOUSSINGA - projet-tutoré 2025</small>", unsafe_allow_html=True)
+footer()

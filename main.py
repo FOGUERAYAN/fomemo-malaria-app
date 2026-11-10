@@ -1,17 +1,11 @@
 import streamlit as st
 from utils.auth import check_invite_code, login
 from utils.database import create_user
+from utils.ui import footer, header
 
 st.set_page_config(page_title="FOMEMO - Accueil", layout="centered")
 
-# Logo en haut à gauche + titre plus petit
-col1, col2 = st.columns([1, 6])
-with col1:
-    st.image("assets/logo.png", width=90)
-with col2:
-    st.markdown("<h4 style='margin-top:20px;'>FOMEMO Malaria Diagnosis App</h4>", unsafe_allow_html=True)
-
-st.markdown("<hr>", unsafe_allow_html=True)
+header()
 
 # Barre latérale avec informations
 with st.sidebar:
@@ -57,7 +51,4 @@ else:
         else:
             st.error("Nom ou mot de passe incorrect.")
 
-# Pied de page
-st.markdown("""
-<br><hr><small style='color: gray;'>Développé avec ❤️ par FOGUE, METAFE, et MOUSSINGA - projet-tutoré 2025</small>
-""", unsafe_allow_html=True)
+footer()
