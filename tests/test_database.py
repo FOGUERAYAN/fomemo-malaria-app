@@ -37,3 +37,17 @@ def test_password_is_hashed_with_salt():
     h1, h2 = db.hash_password("secret123"), db.hash_password("secret123")
     assert h1 != h2 and "secret123" not in h1
     assert db.check_password("secret123", h1)
+
+
+def test_analyses_saved_and_filtered():
+    alice = db.create_user("Alice", "motdepasse1", "patient")
+    bob = db.create_user("Bob", "motdepasse1", "patient")
+    assert db.save_analysis(alice, "a.png", 0.9) == "Parasitée"
+    assert db.save_analysis(alice, "b.png", 0.1) == "Saine"
+    db.save_analysis(bob, "c.png", 0.7)
+
+    assert len(db.list_analyses()) == 3
+    assert len(db.list_analyses(user_id=alice)) == 2
+    assert [r["patient"] for r in db.list_analyses(patient_name="Bob")] == ["Bob"]
+    assert db.list_analyses(date_from="2999-01-01") == []
+    assert db.list_patient_names() == ["Alice", "Bob"]
