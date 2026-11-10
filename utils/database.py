@@ -44,6 +44,18 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS analyses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                filename TEXT,
+                probability REAL NOT NULL,
+                label TEXT NOT NULL CHECK (label IN ('Parasitée', 'Saine')),
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
 
 
 def hash_password(password: str) -> str:
@@ -98,3 +110,47 @@ def verify_user(name, password, role):
     user = dict(row)
     user.pop("password_hash")
     return user
+
+
+def save_analysis(user_id: int, filename: str, probability: float, threshold: float = 0.5) -> str:
+    """Enregistre une analyse et retourne le libellé ('Parasitée' ou 'Saine')."""
+    label = "Parasitée" if probability > threshold else "Saine"
+    init_db()
+    with get_conn() as conn:
+        conn.execute(
+            "INSERT INTO analyses (user_id, filename, probability, label) VALUES (?, ?, ?, ?)",
+            (user_id, filename, float(probability), label),
+        )
+    return label
+
+
+def list_analyses(user_id=None, patient_name=None, date_from=None, date_to=None):
+    """Liste des analyses (plus récentes d'abord), filtrables. Les dates sont des objets date ou 'YYYY-MM-DD'."""
+    init_db()
+    query = (
+        "SELECT a.id, u.name AS patient, a.filename, a.probability, a.label, a.created_at "
+        "FROM analyses a JOIN users u ON u.id = a.user_id WHERE 1=1"
+    )
+    params = []
+    if user_id is not None:
+        query += " AND a.user_id = ?"
+        params.append(user_id)
+    if patient_name:
+        query += " AND u.name = ?"
+        params.append(patient_name)
+    if date_from:
+        query += " AND date(a.created_at) >= date(?)"
+        params.append(str(date_from))
+    if date_to:
+        query += " AND date(a.created_at) <= date(?)"
+        params.append(str(date_to))
+    query += " ORDER BY a.created_at DESC, a.id DESC"
+    with get_conn() as conn:
+        return [dict(r) for r in conn.execute(query, params).fetchall()]
+
+
+def list_patient_names():
+    init_db()
+    with get_conn() as conn:
+        rows = conn.execute("SELECT name FROM users WHERE role = 'patient' ORDER BY name").fetchall()
+    return [r["name"] for r in rows]

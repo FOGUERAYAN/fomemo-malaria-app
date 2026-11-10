@@ -1,10 +1,11 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
+import pandas as pd
 import tensorflow as tf
-import os
 
 from utils.auth import require_role, sidebar_user_box
+from utils.database import list_analyses, save_analysis
 
 # Configuration de la page
 st.set_page_config(page_title="FOMEMO - Patient", layout="centered")
@@ -38,16 +39,30 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="🖼️ Image chargée", use_container_width=True)
 
-    # Redimensionner l'image automatiquement selon le modèle
-    image_resized = image.resize((input_shape[1], input_shape[0]))
-    image_array = np.array(image_resized) / 255.0
-    image_array = np.expand_dims(image_array, axis=0)
+    # L'analyse n'est lancée (et enregistrée) qu'au clic, pas à chaque rerun
+    if st.button("🔬 Analyser l'image", type="primary"):
+        image_resized = image.resize((input_shape[1], input_shape[0]))
+        image_array = np.array(image_resized) / 255.0
+        image_array = np.expand_dims(image_array, axis=0)
 
-    prediction = model.predict(image_array)
-    result = "🦠 Parasitée (Paludisme détecté)" if prediction[0][0] > 0.5 else "✅ Saine (Aucun signe détecté)"
+        probability = float(model.predict(image_array)[0][0])
+        label = save_analysis(user["id"], uploaded_file.name, probability)
 
-    st.markdown("### 🩺 Résultat de l'analyse :")
-    st.success(result)
+        st.markdown("### 🩺 Résultat de l'analyse :")
+        if label == "Parasitée":
+            st.error("🦠 Parasitée (Paludisme détecté)")
+        else:
+            st.success("✅ Saine (Aucun signe détecté)")
+
+# Historique du patient
+st.markdown("### 🗂️ Mon historique")
+history = list_analyses(user_id=user["id"])
+if history:
+    df = pd.DataFrame(history)[["created_at", "filename", "label", "probability"]]
+    df.columns = ["Date", "Fichier", "Résultat", "Probabilité"]
+    st.dataframe(df, use_container_width=True, hide_index=True)
+else:
+    st.caption("Aucune analyse enregistrée pour le moment.")
 
 # Sidebar avec informations ou instructions supplémentaires
 with st.sidebar:
